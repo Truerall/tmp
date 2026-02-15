@@ -2,76 +2,145 @@ package nl.vanhaak.claudlist
 
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import nl.vanhaak.claudlist.ui.theme.ClaudListTheme
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
-private val sampleItems = listOf(
-    ListItem.Header(id = "h1", title = "Groceries"),
-    ListItem.Content(id = "c1", text = "Milk"),
-    ListItem.Content(id = "c2", text = "Eggs"),
-    ListItem.Content(id = "c3", text = "Bread"),
-    ListItem.Header(id = "h2", title = "Household"),
-    ListItem.Content(id = "c4", text = "Paper towels"),
-    ListItem.Content(id = "c5", text = "Dish soap"),
-    ListItem.Header(id = "h3", title = "Work"),
-    ListItem.Content(id = "c6", text = "Finish report"),
-    ListItem.Content(id = "c7", text = "Reply to emails"),
-    ListItem.Content(id = "c8", text = "Schedule meeting"),
-)
+private val BlueToolbar = Color(0xFF1565C0)
+private val OrangeAccent = Color(0xFFE65100)
+private val BackgroundGray = Color(0xFFF0F2F5)
+private val InfoBannerColor = Color(0xFFFFA726)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReorderableListScreen(modifier: Modifier = Modifier) {
-    val list = remember { sampleItems.toMutableStateList() }
+fun ReorderableListScreen(
+    viewModel: IGenericSearchOptionsViewModel,
+    modifier: Modifier = Modifier
+) {
+    val state by viewModel.viewState.collectAsState()
+    val listState = state.soConfigListState
+    val items = listState.items
+    val isEditMode = listState.isEditMode
     val lazyListState = rememberLazyListState()
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
-        list.apply {
-            add(to.index, removeAt(from.index))
-        }
+        viewModel.moveItem(from.index, to.index)
     }
 
-    LazyColumn(
-        state = lazyListState,
-        modifier = modifier.fillMaxSize()
-    ) {
-        items(list, key = { it.id }) { item ->
-            ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
-                val elevation by animateDpAsState(
-                    targetValue = if (isDragging) 8.dp else 0.dp,
-                    label = "dragElevation"
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Filter Edit",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                actions = {
+                    TextButton(onClick = { viewModel.toggleEditMode() }) {
+                        Text(
+                            text = if (isEditMode) "Wijzig volgorde" else "Gereed",
+                            color = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = BlueToolbar
                 )
-                Surface(
-                    shadowElevation = elevation,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    when (item) {
-                        is ListItem.Header -> HeaderRow(
+            )
+        },
+        modifier = modifier
+    ) { innerPadding ->
+        LazyColumn(
+            state = lazyListState,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .background(BackgroundGray)
+        ) {
+            // Info banner
+            if (isEditMode && listState.infoBannerText != null) {
+                item(key = "__info_banner__") {
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(containerColor = InfoBannerColor)
+                    ) {
+                        Text(
+                            text = listState.infoBannerText,
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+            }
+
+            items(items, key = { it.id }) { item ->
+                when (item) {
+                    is SOConfigList.HeaderIVM -> {
+                        HeaderRow(
                             title = item.title,
-                            modifier = Modifier.draggableHandle()
+                            showAddButton = item.showAddButton && isEditMode
                         )
-                        is ListItem.Content -> ContentRow(
-                            text = item.text,
-                            modifier = Modifier.draggableHandle()
-                        )
+                    }
+                    is SOConfigList.SearchOptionIVM -> {
+                        ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
+                            val elevation by animateDpAsState(
+                                targetValue = if (isDragging) 8.dp else 2.dp,
+                                label = "dragElevation"
+                            )
+                            Card(
+                                shape = RoundedCornerShape(12.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                SearchOptionRow(
+                                    text = item.text,
+                                    isEditMode = isEditMode,
+                                    onDelete = { viewModel.deleteItem(item.id) },
+                                    dragModifier = Modifier.draggableHandle()
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -80,30 +149,51 @@ fun ReorderableListScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HeaderRow(title: String, modifier: Modifier = Modifier) {
+private fun HeaderRow(
+    title: String,
+    showAddButton: Boolean,
+    modifier: Modifier = Modifier
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(top = 8.dp, bottom = 4.dp)
     ) {
         Text(
-            text = "☰",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(end = 12.dp)
-        )
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
+            text = title.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = Color.Gray
         )
+        Spacer(modifier = Modifier.weight(1f))
+        if (showAddButton) {
+            TextButton(
+                onClick = { },
+                modifier = Modifier.border(
+                    width = 1.dp,
+                    color = BlueToolbar,
+                    shape = RoundedCornerShape(4.dp)
+                )
+            ) {
+                Text(
+                    text = "Nieuw +",
+                    color = BlueToolbar,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun ContentRow(text: String, modifier: Modifier = Modifier) {
+private fun SearchOptionRow(
+    text: String,
+    isEditMode: Boolean,
+    onDelete: () -> Unit,
+    dragModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -111,14 +201,83 @@ private fun ContentRow(text: String, modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Text(
-            text = "☰",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(end = 12.dp)
-        )
-        Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge
         )
+        Spacer(modifier = Modifier.weight(1f))
+        if (isEditMode) {
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete",
+                    tint = OrangeAccent
+                )
+            }
+        } else {
+            Text(
+                text = "\u2630",
+                style = MaterialTheme.typography.titleLarge,
+                color = Color.Gray,
+                modifier = dragModifier
+            )
+        }
+    }
+}
+
+private class FakeSearchOptionsViewModel : IGenericSearchOptionsViewModel {
+    override val viewState: StateFlow<SOViewState> = MutableStateFlow(
+        SOViewState(
+            soConfigListState = SOConfigListState(
+                items = listOf(
+                    SOConfigList.HeaderIVM(id = "h1", title = "Default filter"),
+                    SOConfigList.SearchOptionIVM(id = "c1", text = "Alle woningen"),
+                    SOConfigList.HeaderIVM(id = "h2", title = "Filters", showAddButton = true),
+                    SOConfigList.SearchOptionIVM(id = "c2", text = "Amsterdam"),
+                    SOConfigList.SearchOptionIVM(id = "c3", text = "Rotterdam"),
+                ),
+                isEditMode = false,
+                infoBannerText = "Wijzig je filters of de volgorde waarin ze worden getoond."
+            )
+        )
+    )
+    override fun moveItem(fromIndex: Int, toIndex: Int) {}
+    override fun deleteItem(id: String) {}
+    override fun toggleEditMode() {}
+}
+
+private class FakeEditModeViewModel : IGenericSearchOptionsViewModel {
+    override val viewState: StateFlow<SOViewState> = MutableStateFlow(
+        SOViewState(
+            soConfigListState = SOConfigListState(
+                items = listOf(
+                    SOConfigList.HeaderIVM(id = "h1", title = "Default filter"),
+                    SOConfigList.SearchOptionIVM(id = "c1", text = "Alle woningen"),
+                    SOConfigList.HeaderIVM(id = "h2", title = "Filters", showAddButton = true),
+                    SOConfigList.SearchOptionIVM(id = "c2", text = "Amsterdam"),
+                    SOConfigList.SearchOptionIVM(id = "c3", text = "Rotterdam"),
+                ),
+                isEditMode = true,
+                infoBannerText = "Wijzig je filters of de volgorde waarin ze worden getoond."
+            )
+        )
+    )
+    override fun moveItem(fromIndex: Int, toIndex: Int) {}
+    override fun deleteItem(id: String) {}
+    override fun toggleEditMode() {}
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReorderableListScreenPreview() {
+    ClaudListTheme {
+        ReorderableListScreen(viewModel = FakeSearchOptionsViewModel())
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ReorderableListScreenEditModePreview() {
+    ClaudListTheme {
+        ReorderableListScreen(viewModel = FakeEditModeViewModel())
     }
 }

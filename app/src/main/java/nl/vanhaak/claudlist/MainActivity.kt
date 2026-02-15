@@ -4,23 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.ui.Modifier
+import androidx.activity.viewModels
 import nl.vanhaak.claudlist.ui.theme.ClaudListTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: GenericSearchOptionsViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             ClaudListTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ReorderableListScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                ReorderableListScreen(viewModel = viewModel)
             }
         }
     }
