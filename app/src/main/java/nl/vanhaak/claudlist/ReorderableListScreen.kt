@@ -33,9 +33,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import nl.vanhaak.claudlist.ui.theme.ClaudListTheme
@@ -61,6 +61,9 @@ fun ReorderableListScreen(
     val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
         viewModel.moveItem(from.index, to.index)
     }
+
+    val halfPadding = dimensionResource(R.dimen.default_half_padding)
+    val activityPadding = dimensionResource(R.dimen.default_activity_padding)
 
     Scaffold(
         topBar = {
@@ -89,8 +92,8 @@ fun ReorderableListScreen(
     ) { innerPadding ->
         LazyColumn(
             state = lazyListState,
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = activityPadding, vertical = halfPadding),
+            verticalArrangement = Arrangement.spacedBy(halfPadding),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
@@ -100,14 +103,14 @@ fun ReorderableListScreen(
             if (isEditMode && listState.infoBannerText != null) {
                 item(key = "__info_banner__") {
                     Card(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(halfPadding),
                         colors = CardDefaults.cardColors(containerColor = InfoBannerColor)
                     ) {
                         Text(
                             text = listState.infoBannerText,
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(activityPadding)
                         )
                     }
                 }
@@ -124,11 +127,11 @@ fun ReorderableListScreen(
                     is SOConfigList.SearchOptionIVM -> {
                         ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
                             val elevation by animateDpAsState(
-                                targetValue = if (isDragging) 8.dp else 2.dp,
+                                targetValue = if (isDragging) halfPadding else dimensionResource(R.dimen.dp2),
                                 label = "dragElevation"
                             )
                             Card(
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(dimensionResource(R.dimen.default_round_corner_size_with_padding)),
                                 elevation = CardDefaults.cardElevation(defaultElevation = elevation),
                                 colors = CardDefaults.cardColors(containerColor = Color.White),
                                 modifier = Modifier.fillMaxWidth()
@@ -154,11 +157,13 @@ private fun HeaderRow(
     showAddButton: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val dp4 = dimensionResource(R.dimen.dp4)
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp)
+            .padding(top = dimensionResource(R.dimen.default_half_padding), bottom = dp4)
     ) {
         Text(
             text = title.uppercase(),
@@ -171,9 +176,9 @@ private fun HeaderRow(
             TextButton(
                 onClick = { },
                 modifier = Modifier.border(
-                    width = 1.dp,
+                    width = dimensionResource(R.dimen.dp1),
                     color = BlueToolbar,
-                    shape = RoundedCornerShape(4.dp)
+                    shape = RoundedCornerShape(dp4)
                 )
             ) {
                 Text(
@@ -198,7 +203,7 @@ private fun SearchOptionRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = dimensionResource(R.dimen.default_activity_padding), vertical = dimensionResource(R.dimen.default_half_padding))
     ) {
         Text(
             text = text,
