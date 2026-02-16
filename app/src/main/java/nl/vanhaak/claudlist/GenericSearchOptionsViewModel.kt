@@ -41,10 +41,35 @@ class GenericSearchOptionsViewModel : ViewModel(), IGenericSearchOptionsViewMode
 
     override fun toggleEditMode() {
         _viewState.update { state ->
+            val newIsEditMode = !state.soConfigListState.isEditMode
             state.copy(
                 soConfigListState = state.soConfigListState.copy(
-                    isEditMode = !state.soConfigListState.isEditMode
+                    isEditMode = newIsEditMode
+                ),
+                toolbarViewState = state.toolbarViewState.copy(
+                    actionStartTitle = if (newIsEditMode) R.string.btn_edit_order else R.string.btn_done
                 )
+            )
+        }
+    }
+
+    override fun onNavEvent(event: NavEvent) {
+        _viewState.update { state ->
+            state.copy(
+                toolbarViewState = when (event) {
+                    is NavEvent.ToMainSearch -> ToolbarViewState(
+                        title = R.string.toolbar_main_search,
+                        icStartResId = R.drawable.ic_place,
+                        icEndResId = R.drawable.ic_add
+                    )
+                    is NavEvent.ToFilter -> ToolbarViewState(
+                        title = R.string.toolbar_filter
+                    )
+                    is NavEvent.ToFilterEdit -> ToolbarViewState(
+                        title = R.string.toolbar_filter_edit,
+                        actionStartTitle = if (state.soConfigListState.isEditMode) R.string.btn_edit_order else R.string.btn_done
+                    )
+                }
             )
         }
     }

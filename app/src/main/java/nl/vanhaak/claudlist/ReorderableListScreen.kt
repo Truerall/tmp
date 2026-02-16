@@ -29,7 +29,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,11 +39,6 @@ import kotlinx.coroutines.flow.StateFlow
 import nl.vanhaak.claudlist.ui.theme.ClaudListTheme
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-
-internal val BlueToolbar = Color(0xFF1565C0)
-private val OrangeAccent = Color(0xFFE65100)
-private val BackgroundGray = Color(0xFFF0F2F5)
-private val InfoBannerColor = Color(0xFFFFA726)
 
 @Composable
 fun ReorderableListScreen(
@@ -66,14 +63,14 @@ fun ReorderableListScreen(
         verticalArrangement = Arrangement.spacedBy(halfPadding),
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundGray)
+            .background(colorResource(R.color.background_gray))
     ) {
         // Info banner
         if (isEditMode && listState.infoBannerText != null) {
             item(key = "__info_banner__") {
                 Card(
                     shape = RoundedCornerShape(halfPadding),
-                    colors = CardDefaults.cardColors(containerColor = InfoBannerColor)
+                    colors = CardDefaults.cardColors(containerColor = colorResource(R.color.info_banner))
                 ) {
                     Text(
                         text = listState.infoBannerText,
@@ -145,13 +142,13 @@ private fun HeaderRow(
                 onClick = { },
                 modifier = Modifier.border(
                     width = dimensionResource(R.dimen.dp1),
-                    color = BlueToolbar,
+                    color = colorResource(R.color.primary),
                     shape = RoundedCornerShape(dp4)
                 )
             ) {
                 Text(
-                    text = "Nieuw +",
-                    color = BlueToolbar,
+                    text = stringResource(R.string.btn_new_plus),
+                    color = colorResource(R.color.primary),
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -182,8 +179,8 @@ private fun SearchOptionRow(
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = OrangeAccent
+                    contentDescription = stringResource(R.string.cd_delete),
+                    tint = colorResource(R.color.accent)
                 )
             }
         } else {
@@ -216,6 +213,7 @@ private class FakeSearchOptionsViewModel : IGenericSearchOptionsViewModel {
     override fun moveItem(fromIndex: Int, toIndex: Int) {}
     override fun deleteItem(id: String) {}
     override fun toggleEditMode() {}
+    override fun onNavEvent(event: NavEvent) {}
 }
 
 private class FakeEditModeViewModel : IGenericSearchOptionsViewModel {
@@ -237,6 +235,7 @@ private class FakeEditModeViewModel : IGenericSearchOptionsViewModel {
     override fun moveItem(fromIndex: Int, toIndex: Int) {}
     override fun deleteItem(id: String) {}
     override fun toggleEditMode() {}
+    override fun onNavEvent(event: NavEvent) {}
 }
 
 @Preview(showBackground = true)

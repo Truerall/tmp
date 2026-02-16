@@ -7,4 +7,5 @@ interface IGenericSearchOptionsViewModel {
     fun moveItem(fromIndex: Int, toIndex: Int)
     fun deleteItem(id: String)
     fun toggleEditMode()
+    fun onNavEvent(event: NavEvent)
 }

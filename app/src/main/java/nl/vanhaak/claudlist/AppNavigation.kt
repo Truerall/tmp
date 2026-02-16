@@ -5,12 +5,11 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import kotlinx.serialization.Serializable
 
-object Routes {
-    const val MAIN_SEARCH = "main_search"
-    const val FILTER = "filter"
-    const val FILTER_EDIT = "filter_edit"
-}
+@Serializable object MainSearch
+@Serializable object Filter
+@Serializable object FilterEdit
 
 @Composable
 fun AppNavigation(
@@ -20,19 +19,25 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Routes.MAIN_SEARCH,
+        startDestination = MainSearch,
         modifier = modifier
     ) {
-        composable(Routes.MAIN_SEARCH) {
+        composable<MainSearch> {
             MainSearchScreen(
-                onNavigateToFilter = { navController.navigate(Routes.FILTER) },
-                onNavigateToFilterEdit = { navController.navigate(Routes.FILTER_EDIT) }
+                onNavigateToFilter = {
+                    viewModel.onNavEvent(NavEvent.ToFilter)
+                    navController.navigate(Filter)
+                },
+                onNavigateToFilterEdit = {
+                    viewModel.onNavEvent(NavEvent.ToFilterEdit)
+                    navController.navigate(FilterEdit)
+                }
             )
         }
-        composable(Routes.FILTER) {
+        composable<Filter> {
             FilterScreen()
         }
-        composable(Routes.FILTER_EDIT) {
+        composable<FilterEdit> {
             ReorderableListScreen(viewModel = viewModel)
         }
     }

@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">claudList</string>
+    <string name="toolbar_main_search">Main Search</string>
+    <string name="toolbar_filter">Filter</string>
+    <string name="toolbar_filter_edit">Filter Edit</string>
+    <string name="screen_main_search">Main Search</string>
+    <string name="screen_filter">Filter</string>
+    <string name="btn_go_to_filter">Go to Filter</string>
+    <string name="btn_go_to_filter_edit">Go to Filter Edit</string>
+    <string name="btn_new_plus">Nieuw +</string>
+    <string name="btn_edit_order">Wijzig volgorde</string>
+    <string name="btn_done">Gereed</string>
+    <string name="cd_map">Map</string>
+    <string name="cd_add">Add</string>
+    <string name="cd_delete">Delete</string>
+    <string name="info_banner_text">Wijzig je filters of de volgorde waarin ze worden getoond.</string>
 </resources>

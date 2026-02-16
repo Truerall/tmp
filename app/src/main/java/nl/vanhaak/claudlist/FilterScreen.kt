@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import nl.vanhaak.claudlist.ui.theme.ClaudListTheme
 
@@ -17,7 +18,7 @@ fun FilterScreen(modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize()
     ) {
         Text(
-            text = "Filter",
+            text = stringResource(R.string.screen_filter),
             style = MaterialTheme.typography.headlineMedium
         )
     }

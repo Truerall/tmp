@@ -6,9 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,8 +19,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import nl.vanhaak.claudlist.ui.theme.ClaudListTheme
 
@@ -38,27 +37,26 @@ class MainActivity : ComponentActivity() {
         setContent {
             ClaudListTheme {
                 val navController = rememberNavController()
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
+                val state by viewModel.viewState.collectAsState()
+                val toolbar = state.toolbarViewState
 
                 Scaffold(
                     topBar = {
                         TopAppBar(
                             title = {
-                                Text(
-                                    text = toolbarTitle(currentRoute),
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                if (toolbar.title != 0) {
+                                    Text(
+                                        text = stringResource(toolbar.title),
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             },
                             actions = {
-                                ToolbarActions(
-                                    currentRoute = currentRoute,
-                                    viewModel = viewModel
-                                )
+                                ToolbarActions(toolbar = toolbar, viewModel = viewModel)
                             },
                             colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = BlueToolbar
+                                containerColor = colorResource(R.color.primary)
                             )
                         )
                     }
@@ -74,44 +72,35 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private fun toolbarTitle(currentRoute: String?): String = when (currentRoute) {
-    Routes.MAIN_SEARCH -> "Main Search"
-    Routes.FILTER -> "Filter"
-    Routes.FILTER_EDIT -> "Filter Edit"
-    else -> ""
-}
-
 @Composable
 private fun ToolbarActions(
-    currentRoute: String?,
+    toolbar: ToolbarViewState,
     viewModel: IGenericSearchOptionsViewModel
 ) {
-    when (currentRoute) {
-        Routes.MAIN_SEARCH -> {
-            IconButton(onClick = { }) {
-                Icon(
-                    imageVector = Icons.Default.Place,
-                    contentDescription = "Map",
-                    tint = Color.White
-                )
-            }
-            IconButton(onClick = { }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add",
-                    tint = Color.White
-                )
-            }
+    toolbar.icStartResId?.let { resId ->
+        IconButton(onClick = { }) {
+            Icon(
+                painter = painterResource(resId),
+                contentDescription = null,
+                tint = Color.White
+            )
         }
-        Routes.FILTER_EDIT -> {
-            val state by viewModel.viewState.collectAsState()
-            val isEditMode = state.soConfigListState.isEditMode
-            TextButton(onClick = { viewModel.toggleEditMode() }) {
-                Text(
-                    text = if (isEditMode) "Wijzig volgorde" else "Gereed",
-                    color = Color.White
-                )
-            }
+    }
+    toolbar.actionStartTitle?.let { resId ->
+        TextButton(onClick = { viewModel.toggleEditMode() }) {
+            Text(
+                text = stringResource(resId),
+                color = Color.White
+            )
+        }
+    }
+    toolbar.icEndResId?.let { resId ->
+        IconButton(onClick = { }) {
+            Icon(
+                painter = painterResource(resId),
+                contentDescription = null,
+                tint = Color.White
+            )
         }
     }
 }
