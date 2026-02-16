@@ -34,45 +34,49 @@ class GenericSearchOptionsViewModel : ViewModel(), IGenericSearchOptionsViewMode
         }
     }
 
-    /**
-     * Split items by section headers, enforce max-1 in default, reassemble.
-     * If default ends up with >1 option, the old one gets bumped to Filters.
-     * If default is empty, a placeholder is inserted.
-     */
     private fun enforceDefaultSection(items: List<SOConfigList>, draggedItemId: String): List<SOConfigList> {
-        // Split the flat list into sections: each section = [Header, ...items]
-        val sections = items.fold(mutableListOf<MutableList<SOConfigList>>()) { acc, item ->
+        val sections = splitIntoSections(items)
+        val defaultSection = sectionById(sections, "h1") ?: return items
+        val filtersSection = sectionById(sections, "h2")
+
+        bumpExtraDefault(defaultSection, filtersSection, draggedItemId)
+        ensurePlaceholder(defaultSection)
+
+        return sections.flatten()
+    }
+
+    /** Split flat list into sections, each starting with a HeaderIVM. */
+    private fun splitIntoSections(items: List<SOConfigList>): MutableList<MutableList<SOConfigList>> =
+        items.fold(mutableListOf()) { acc, item ->
             if (item is SOConfigList.HeaderIVM) acc.add(mutableListOf(item))
             else acc.lastOrNull()?.add(item)
             acc
         }
 
-        val defaultSection = sections.firstOrNull {
-            (it.firstOrNull() as? SOConfigList.HeaderIVM)?.id == "h1"
-        } ?: return items
-        val filtersSection = sections.firstOrNull {
-            (it.firstOrNull() as? SOConfigList.HeaderIVM)?.id == "h2"
+    private fun sectionById(sections: List<List<SOConfigList>>, headerId: String) =
+        sections.firstOrNull { (it.firstOrNull() as? SOConfigList.HeaderIVM)?.id == headerId }
+                as? MutableList<SOConfigList>
+
+    /** If default has >1 search option, move the old one to top of filters. */
+    private fun bumpExtraDefault(
+        defaultSection: MutableList<SOConfigList>,
+        filtersSection: MutableList<SOConfigList>?,
+        draggedItemId: String
+    ) {
+        val options = defaultSection.filterIsInstance<SOConfigList.SearchOptionIVM>()
+        if (options.size <= 1) return
+
+        val oldDefault = options.first { it.id != draggedItemId }
+        defaultSection.remove(oldDefault)
+        filtersSection?.add(1, oldDefault)
+    }
+
+    /** Remove all placeholders, then add one back if no search option remains. */
+    private fun ensurePlaceholder(section: MutableList<SOConfigList>) {
+        section.removeAll { it is SOConfigList.PlaceholderIVM }
+        if (section.none { it is SOConfigList.SearchOptionIVM }) {
+            section.add(1, DEFAULT_PLACEHOLDER)
         }
-
-        // Strip placeholders, collect search options
-        val defaultOptions = defaultSection.drop(1)
-            .filterIsInstance<SOConfigList.SearchOptionIVM>()
-
-        if (defaultOptions.size > 1) {
-            // Bump old default (not the dragged item) to top of Filters
-            val oldDefault = defaultOptions.first { it.id != draggedItemId }
-            defaultSection.remove(oldDefault)
-            filtersSection?.add(1, oldDefault) // after the header
-        }
-
-        // Replace placeholders: remove all, add one if section is empty
-        defaultSection.removeAll { it is SOConfigList.PlaceholderIVM }
-        val hasOption = defaultSection.any { it is SOConfigList.SearchOptionIVM }
-        if (!hasOption) {
-            defaultSection.add(1, DEFAULT_PLACEHOLDER)
-        }
-
-        return sections.flatten()
     }
 
     override fun deleteItem(id: String) {
