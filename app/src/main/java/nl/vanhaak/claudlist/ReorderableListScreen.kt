@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,10 +86,32 @@ fun ReorderableListScreen(
         items(items, key = { it.id }) { item ->
             when (item) {
                 is SOConfigList.HeaderIVM -> {
-                    HeaderRow(
-                        title = item.title,
-                        showAddButton = item.showAddButton && isEditMode
-                    )
+                    ReorderableItem(reorderableLazyListState, key = item.id, enabled = false) {
+                        HeaderRow(
+                            title = item.title,
+                            showAddButton = item.showAddButton && isEditMode
+                        )
+                    }
+                }
+                is SOConfigList.PlaceholderIVM -> {
+                    ReorderableItem(reorderableLazyListState, key = item.id) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = activityPadding,
+                                    vertical = halfPadding
+                                )
+                        ) {
+                            Text(
+                                text = item.text,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontStyle = FontStyle.Italic,
+                                color = Color.Gray
+                            )
+                        }
+                    }
                 }
                 is SOConfigList.SearchOptionIVM -> {
                     ReorderableItem(reorderableLazyListState, key = item.id) { isDragging ->
@@ -200,8 +223,9 @@ private class FakeSearchOptionsViewModel : IGenericSearchOptionsViewModel {
             soConfigListState = SOConfigListState(
                 items = listOf(
                     SOConfigList.HeaderIVM(id = "h1", title = "Default filter"),
-                    SOConfigList.SearchOptionIVM(id = "c1", text = "Alle woningen"),
+                    SOConfigList.PlaceholderIVM(id = "ph1", text = "Sleep een filter hierheen om het als standaard in te stellen"),
                     SOConfigList.HeaderIVM(id = "h2", title = "Filters", showAddButton = true),
+                    SOConfigList.SearchOptionIVM(id = "c1", text = "Alle woningen"),
                     SOConfigList.SearchOptionIVM(id = "c2", text = "Amsterdam"),
                     SOConfigList.SearchOptionIVM(id = "c3", text = "Rotterdam"),
                 ),
@@ -222,8 +246,9 @@ private class FakeEditModeViewModel : IGenericSearchOptionsViewModel {
             soConfigListState = SOConfigListState(
                 items = listOf(
                     SOConfigList.HeaderIVM(id = "h1", title = "Default filter"),
-                    SOConfigList.SearchOptionIVM(id = "c1", text = "Alle woningen"),
+                    SOConfigList.PlaceholderIVM(id = "ph1", text = "Sleep een filter hierheen om het als standaard in te stellen"),
                     SOConfigList.HeaderIVM(id = "h2", title = "Filters", showAddButton = true),
+                    SOConfigList.SearchOptionIVM(id = "c1", text = "Alle woningen"),
                     SOConfigList.SearchOptionIVM(id = "c2", text = "Amsterdam"),
                     SOConfigList.SearchOptionIVM(id = "c3", text = "Rotterdam"),
                 ),

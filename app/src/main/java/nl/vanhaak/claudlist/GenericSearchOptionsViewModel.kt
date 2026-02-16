@@ -21,12 +21,64 @@ class GenericSearchOptionsViewModel : ViewModel(), IGenericSearchOptionsViewMode
 
     override fun moveItem(fromIndex: Int, toIndex: Int) {
         _viewState.update { state ->
-            val mutableItems = state.soConfigListState.items.toMutableList()
-            mutableItems.add(toIndex, mutableItems.removeAt(fromIndex))
+            val originalItems = state.soConfigListState.items
+            val mutableItems = originalItems.toMutableList()
+
+            // Perform the swap
+            val movedItem = mutableItems.removeAt(fromIndex)
+            mutableItems.add(toIndex, movedItem)
+
+            // Rebuild placeholders and enforce swap for default section
+            val rebuilt = rebuildPlaceholders(mutableItems, movedItem.id) ?: return@update state
             state.copy(
-                soConfigListState = state.soConfigListState.copy(items = mutableItems)
+                soConfigListState = state.soConfigListState.copy(items = rebuilt)
             )
         }
+    }
+
+    private fun rebuildPlaceholders(items: MutableList<SOConfigList>, draggedItemId: String): List<SOConfigList>? {
+        // Find default section range: from h1 header to the next header
+        val h1Index = items.indexOfFirst { it is SOConfigList.HeaderIVM && it.id == "h1" }
+        if (h1Index == -1) return items
+
+        // Remove all placeholders from default section
+        fun defaultSectionEnd(): Int {
+            val idx = items.drop(h1Index + 1).indexOfFirst { it is SOConfigList.HeaderIVM }
+            return if (idx == -1) items.size else h1Index + 1 + idx
+        }
+        items.subList(h1Index + 1, defaultSectionEnd()).removeAll { it is SOConfigList.PlaceholderIVM }
+
+        // Find SearchOptionIVMs in default section
+        val defaultOptions = items.subList(h1Index + 1, defaultSectionEnd())
+            .filterIsInstance<SOConfigList.SearchOptionIVM>()
+
+        if (defaultOptions.size > 1) {
+            // Kick the old default (the one that is NOT the dragged item) to top of Filters section
+            val oldDefault = defaultOptions.first { it.id != draggedItemId }
+            items.remove(oldDefault)
+            // Insert right after the Filters header (h2)
+            val h2Index = items.indexOfFirst { it is SOConfigList.HeaderIVM && it.id == "h2" }
+            if (h2Index != -1) {
+                items.add(h2Index + 1, oldDefault)
+            } else {
+                items.add(oldDefault) // fallback: append
+            }
+        }
+
+        // Re-check: if default section is now empty, insert placeholder
+        val remainingOptions = items.subList(h1Index + 1, defaultSectionEnd())
+            .count { it is SOConfigList.SearchOptionIVM }
+        if (remainingOptions == 0) {
+            items.add(
+                h1Index + 1,
+                SOConfigList.PlaceholderIVM(
+                    id = "ph1",
+                    text = "Sleep een filter hierheen om het als standaard in te stellen"
+                )
+            )
+        }
+
+        return items
     }
 
     override fun deleteItem(id: String) {
